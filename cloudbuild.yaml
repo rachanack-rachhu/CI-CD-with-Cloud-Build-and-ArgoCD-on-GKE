@@ -1,0 +1,39 @@
+substitutions:
+  _REGION: "us-central1"
+  _IMAGE_NAME: "python-app"
+
+steps:
+
+# Build Docker image
+- name: "gcr.io/cloud-builders/docker"
+  args:
+    - build
+    - "-t"
+    - "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"
+    - "./app"
+
+# Push image
+- name: "gcr.io/cloud-builders/docker"
+  args:
+    - push
+    - "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"
+
+# Replace image in k8s/deployment.yaml
+- name: "ubuntu"
+  entrypoint: bash
+  args:
+    - "-c"
+    - |
+      sed -i "s|IMAGE_PLACEHOLDER|us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}|g" k8s/deployment.yaml
+
+# Push updated deployment.yaml to GitHub
+- name: "gcr.io/cloud-builders/git"
+  entrypoint: bash
+  args:
+    - "-c"
+    - |
+      git config user.email "rachanack123@gmail.com"
+      git config user.name "rachanack-rachhu"
+      git add k8s/deployment.yaml
+      git commit -m "Update image to ${SHORT_SHA}"
+      git push

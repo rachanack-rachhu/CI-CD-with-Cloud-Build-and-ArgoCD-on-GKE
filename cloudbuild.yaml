@@ -9,18 +9,26 @@ steps:
 
 # 1. Build Docker image
 - name: "gcr.io/cloud-builders/docker"
-  args: ["build", "-t", "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}", "./app"]
+  args:
+    [
+      "build",
+      "-t",
+      "us-central1-docker.pkg.dev/$PROJECT_ID/python-repo/${_IMAGE_NAME}:${SHORT_SHA}",
+      "./app"
+    ]
 
-# 2. Push image
+# 2. Push Docker image
 - name: "gcr.io/cloud-builders/docker"
-  args: ["push", "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"]
+  args:
+    [
+      "push",
+      "us-central1-docker.pkg.dev/$PROJECT_ID/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"
+    ]
 
-# 3. Update deployment.yaml (optional if using ArgoCD image updater)
+# 3. Update deployment.yaml
 - name: "ubuntu"
   entrypoint: bash
   args:
     - "-c"
     - |
-      sed -i "s|IMAGE_PLACEHOLDER|us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}|g" k8s/deployment.yaml
-
-# ❗ REMOVED — No git push (this caused your error)
+      sed -i "s|IMAGE_PLACEHOLDER|us-central1-docker.pkg.dev/$PROJECT_ID/python-repo/${_IMAGE_NAME}:${SHORT_SHA}|g" k8s/deployment.yaml

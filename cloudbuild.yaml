@@ -7,18 +7,22 @@ steps:
 # 1. Build Docker image
 - name: "gcr.io/cloud-builders/docker"
   args:
-    - build
-    - "-t"
-    - "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"
-    - "./app"
+    [
+      "build",
+      "-t",
+      "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}",
+      "./app"
+    ]
 
-# 2. Push image to Artifact Registry
+# 2. Push image
 - name: "gcr.io/cloud-builders/docker"
   args:
-    - push
-    - "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"
+    [
+      "push",
+      "us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}"
+    ]
 
-# 3. Replace image name inside k8s/deployment.yaml
+# 3. Update deployment.yaml
 - name: "ubuntu"
   entrypoint: bash
   args:
@@ -26,7 +30,7 @@ steps:
     - |
       sed -i "s|IMAGE_PLACEHOLDER|us-central1-docker.pkg.dev/thematic-land-477215-a5/python-repo/${_IMAGE_NAME}:${SHORT_SHA}|g" k8s/deployment.yaml
 
-# 4. Commit and push updated deployment.yaml back to GitHub
+# 4. Commit and push
 - name: "gcr.io/cloud-builders/git"
   entrypoint: bash
   args:
@@ -35,15 +39,5 @@ steps:
       git config --global user.email "rachanack123@gmail.com"
       git config --global user.name "rachanack-rachhu"
       git add k8s/deployment.yaml
-      git commit -m "Update image to ${SHORT_SHA}"
+      git commit -m "Update image to ${SHORT_SHA}" || echo "No changes to commit"
       git push
-
-# 5. Notify ArgoCD to refresh (Optional but recommended)
-- name: "curlimages/curl"
-  entrypoint: curl
-  args:
-    [
-      "-X",
-      "POST",
-      "http://ARGOCD_SERVER/api/v1/applications/python-app/refresh"
-    ]
